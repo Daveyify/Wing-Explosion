@@ -1,62 +1,36 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Fusion;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using static Unity.Collections.Unicode;
 
-public class GameManager : MonoBehaviour
+public class GameManager : NetworkBehaviour
 {
-    public static GameManager Instance;
+    public NetworkPrefabRef bombPrefab;
 
-    private readonly Dictionary<string, PlayerControl> localPlayers = new();
-    private readonly Dictionary<string, RemotePlayer> remotePlayers = new();
-
-    void Awake()
+    public override void Spawned()
     {
-        if (Instance != null) { Destroy(gameObject); return; }
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!Object.HasStateAuthority) return;
+
+        StartCoroutine(SpawnBombDelayed());
     }
 
-    public void RegisterPlayer(string id, PlayerControl local, RemotePlayer remote = null)
+    System.Collections.IEnumerator SpawnBombDelayed()
     {
-        if (local != null) localPlayers[id] = local;
-        if (remote != null) remotePlayers[id] = remote;
-    }
+        yield return new WaitForSeconds(1f);
 
-    public void UnregisterPlayer(string id)
-    {
-        localPlayers.Remove(id);
-        remotePlayers.Remove(id);
-    }
+        var players = new List<PlayerRef>(Runner.ActivePlayers);
+        if (players.Count == 0) yield break;
 
-    public void DeletePlayer(string id)
-    {
-        NetworkManager.Instance?.BroadcastEliminar(id);
-        HandleDelete(id);
-    }
+        PlayerRef startPlayer = players[Random.Range(0, players.Count)];
 
-    public void HandleDelete(string id)
-    {
-        Debug.Log($"[Game] Player {id} eliminated");
+        NetworkObject bombObj = Runner.Spawn(bombPrefab, Vector3.zero, Quaternion.identity);
+        BombController bomb = bombObj.GetComponent<BombController>();
 
-        if (localPlayers.TryGetValue(id, out PlayerControl lp))
-            lp.gameObject.SetActive(false);
-        else if (remotePlayers.TryGetValue(id, out RemotePlayer rp))
-            rp.gameObject.SetActive(false);
+        if (Runner.TryGetPlayerObject(startPlayer, out NetworkObject playerObj))
+        {
+            playerObj.GetComponent<PlayerControl>()?.GiveBomb(bomb);
+        }
 
-        UnregisterPlayer(id);
-        CheckVictory();
-    }
-
-    private void CheckVictory()
-    {
-        int total = localPlayers.Count + remotePlayers.Count;
-        if (total <= 1)
-            SceneManager.LoadScene("WinScene");
-    }
-
-    public PlayerControl GetLocalPlayer(string id)
-    {
-        localPlayers.TryGetValue(id, out PlayerControl lp);
-        return lp;
+        Debug.Log($"🎮 Juego iniciado! {startPlayer} tiene la bomba.");
     }
 } 

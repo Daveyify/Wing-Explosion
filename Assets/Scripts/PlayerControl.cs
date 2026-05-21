@@ -116,20 +116,16 @@ public class PlayerControl : NetworkBehaviour
         }
     }
 
-    // RPC: el cliente le pide al host que transfiera la bomba
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     void RPC_RequestPassBomb(PlayerRef targetPlayer)
     {
         if (!HasBomb) return;
 
-        // Encontrar la bomba en la escena
         var bomb = FindObjectOfType<BombController>();
         if (bomb == null) return;
 
-        // Quitar bomba de este jugador
         HasBomb = false;
 
-        // Dar bomba al otro jugador
         if (Runner.TryGetPlayerObject(targetPlayer, out NetworkObject targetObj))
         {
             var targetHandler = targetObj.GetComponent<PlayerControl>();
@@ -142,7 +138,6 @@ public class PlayerControl : NetworkBehaviour
         }
     }
 
-    // Llamado por BombController cuando explota
     public void OnBombExploded()
     {
         HasBomb = false;
