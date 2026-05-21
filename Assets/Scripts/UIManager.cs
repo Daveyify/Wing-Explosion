@@ -6,6 +6,8 @@ using TMPro;
 
 public class UIManager : MonoBehaviour
 {
+
+    /*
     public static UIManager Instance;
 
     [Header("Admin Panel")]
@@ -128,5 +130,5 @@ public class UIManager : MonoBehaviour
     }
 
     public void ChangeScene(string sceneName) => SceneManager.LoadScene(sceneName);
-    public void Exit() => Application.Quit();
+    public void Exit() => Application.Quit();*/
 }

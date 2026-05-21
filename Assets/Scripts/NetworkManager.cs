@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 
 public class NetworkManager : MonoBehaviour
 {
+    /*
     public static NetworkManager Instance;
 
     [Header("Prefabs")]
@@ -32,7 +33,7 @@ public class NetworkManager : MonoBehaviour
 
 
     void Awake()
-    {
+    { 
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
@@ -49,7 +50,7 @@ public class NetworkManager : MonoBehaviour
             sendTimer = 0f;
             Vector3 p = localPlayer.transform.position;
             float ry = localPlayer.transform.eulerAngles.y;
-            float rx = localPlayer.GetCameraXRotation();
+            //float rx = localPlayer.GetCameraXRotation();
             Send($"POS|{localId}|{p.x:F2}|{p.y:F2}|{p.z:F2}|{rx:F2}|{ry:F2}");
         }
     }
@@ -242,4 +243,6 @@ public class NetworkManager : MonoBehaviour
     public void BroadcastKick(string id) => Send($"KICK|{id}");
     public void BroadcastPause(bool pause) => Send($"PAUSE|{(pause ? "1" : "0")}");
     public Dictionary<string, int> GetPings() => new(playerPings);
+
+*/
 }

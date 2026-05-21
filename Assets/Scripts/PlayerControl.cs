@@ -1,6 +1,8 @@
-﻿using UnityEngine;
+﻿using Fusion;
+using UnityEngine;
+using static Unity.Collections.Unicode;
 
-public class PlayerControl : MonoBehaviour
+public class PlayerControl : NetworkBehaviour
 {
     [Header("Movement")]
     public float moveSpeed = 6f;
@@ -14,6 +16,13 @@ public class PlayerControl : MonoBehaviour
     public float mouseSensitivity = 100f;
 
     [HideInInspector] public string networkId;
+
+    [Networked] public NetworkBool HasBomb { get; set; }
+
+    public float passRange = 3f;       
+    public LayerMask playerLayer;
+
+    private BombController currentBomb;
 
     private CharacterController _cc;
     private Vector3 _velocity;
@@ -33,9 +42,6 @@ public class PlayerControl : MonoBehaviour
     {
         MouseLook();
         Movement();
-
-        if (Input.GetMouseButtonDown(0))
-            TryPunch();
     }
 
     void MouseLook()
@@ -66,36 +72,98 @@ public class PlayerControl : MonoBehaviour
         _cc.Move(_velocity * Time.deltaTime);
     }
 
-    void TryPunch()
+    public override void FixedUpdateNetwork()
     {
-        Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
-        Debug.DrawRay(ray.origin, ray.direction * passDistance, Color.red, 1f);
+        if (!HasInputAuthority) return;
 
-        if (!Physics.Raycast(ray, out RaycastHit hit, passDistance)) return;
-
-        Vector3 pushDir = (hit.collider.transform.position - transform.position).normalized;
-        pushDir.y = 0.3f;
-        pushDir.Normalize();
-
-        PlayerControl localTarget = hit.collider.GetComponentInParent<PlayerControl>();
-        if (localTarget != null && localTarget != this)
+        // Presionar F o botón para pasar la bomba
+        if (GetInput(out NetworkInputData input) && input.PassBomb)
         {
-            localTarget.RecievePush(pushDir);
-            NetworkManager.Instance.BroadcastPush(localTarget.networkId, pushDir);
-            return;
+            TryPassBomb();
+        }
+    }
+
+    void TryPassBomb()
+    {
+        if (!HasBomb) return;
+
+        // Buscar jugadores cercanos
+        Collider[] nearby = Physics.OverlapSphere(transform.position, passRange, playerLayer);
+
+        PlayerControl closest = null;
+        float minDist = float.MaxValue;
+
+        foreach (var col in nearby)
+        {
+            var other = col.GetComponent<PlayerControl>();
+            if (other == null || other == this) continue;
+
+            float dist = Vector3.Distance(transform.position, other.transform.position);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                closest = other;
+            }
         }
 
-        RemotePlayer remoteTarget = hit.collider.GetComponentInParent<RemotePlayer>();
-        if (remoteTarget != null)
-            NetworkManager.Instance.BroadcastPush(remoteTarget.networkId, pushDir);
+        if (closest != null)
+        {
+            RPC_RequestPassBomb(closest.Object.InputAuthority);
+        }
+        else
+        {
+            Debug.Log("No hay jugadores cerca para pasar la bomba!");
+        }
     }
 
-    public void RecievePush(Vector3 direction)
+    // RPC: el cliente le pide al host que transfiera la bomba
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    void RPC_RequestPassBomb(PlayerRef targetPlayer)
     {
-        _velocity += direction* pushForce;
+        if (!HasBomb) return;
+
+        // Encontrar la bomba en la escena
+        var bomb = FindObjectOfType<BombController>();
+        if (bomb == null) return;
+
+        // Quitar bomba de este jugador
+        HasBomb = false;
+
+        // Dar bomba al otro jugador
+        if (Runner.TryGetPlayerObject(targetPlayer, out NetworkObject targetObj))
+        {
+            var targetHandler = targetObj.GetComponent<PlayerControl>();
+            if (targetHandler != null)
+            {
+                targetHandler.HasBomb = true;
+                bomb.PassBomb(targetPlayer);
+                Debug.Log($"Bomba pasada a {targetPlayer}!");
+            }
+        }
     }
 
-    public string GetColorString() => $"{playerColor.r:F2}|{playerColor.g:F2}|{playerColor.b:F2}";
+    // Llamado por BombController cuando explota
+    public void OnBombExploded()
+    {
+        HasBomb = false;
+        Debug.Log("Perdiste! La bomba explotó en tus manos.");
+        // Aquí puedes: mostrar pantalla de derrota, restar vida, etc.
+    }
 
-    public float GetCameraXRotation() => _xRotation;
+    // Para el host: dar la bomba inicial a este jugador
+    public void GiveBomb(BombController bomb)
+    {
+        if (!Object.HasStateAuthority) return;
+        HasBomb = true;
+        currentBomb = bomb;
+        bomb.BombHolder = Object.InputAuthority;
+        bomb.transform.SetParent(transform);
+        bomb.transform.localPosition = Vector3.up * 1.5f;
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, passRange);
+    }
 }
