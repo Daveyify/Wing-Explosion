@@ -115,4 +115,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d707a732005b6044a281295ec24ecb4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BombController
-  bombDuration: 10
+  bombDuration: 60

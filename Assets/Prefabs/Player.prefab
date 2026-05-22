@@ -156,14 +156,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f659b1acba421841884e990a46685eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerControl
-  moveSpeed: 15
-  gravity: -20
+  walkSpeed: 10
   jumpHeight: 1.2
-  passDistance: 3
-  pushForce: 10
-  cameraTransform: {fileID: 7335121113787100242}
+  gravity: -20
   mouseSensitivity: 200
-  networkId: 
+  playerCamera: {fileID: 7335121113787100242}
   _HasBomb:
     _value: 0
   passRange: 3
@@ -256,7 +253,7 @@ Camera:
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
-  m_FOVAxisMode: 0
+  m_FOVAxisMode: 1
   m_Iso: 200
   m_ShutterSpeed: 0.005
   m_Aperture: 16

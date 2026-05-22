@@ -3,7 +3,7 @@ using UnityEngine;
 
 public struct NetworkInputData : INetworkInput
 {
-    public NetworkBool PassBomb;
-
     public Vector3 Direction;
+    public NetworkBool Jump;
+    public NetworkBool PassBomb;
 }

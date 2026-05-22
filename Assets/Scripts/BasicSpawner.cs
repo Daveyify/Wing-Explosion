@@ -7,29 +7,39 @@ using UnityEngine.SceneManagement;
 
 public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
-
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
-    void INetworkRunnerCallbacks.OnInput(NetworkRunner runner, NetworkInput input){ 
-        
-         var data = new NetworkInputData();
+    // Guardamos si el jugador presionó jump/passBomb en este frame
+    private bool _jumpPressed;
+    private bool _passPressed;
 
-            if (Input.GetKey(KeyCode.W))
-                data.Direction += Vector3.forward;
-
-            if (Input.GetKey(KeyCode.S))
-                data.Direction += Vector3.back;
-
-            if (Input.GetKey(KeyCode.A))
-                data.Direction += Vector3.left;
-
-            if (Input.GetKey(KeyCode.D))
-                data.Direction += Vector3.right;
-
-            input.Set(data);
+    private void Update()
+    {
+        // Capturar inputs de un solo frame aquí, antes de que OnInput los consuma
+        if (Input.GetButtonDown("Jump")) _jumpPressed = true;
+        if (Input.GetKeyDown(KeyCode.F)) _passPressed = true;
     }
- 
+
+    void INetworkRunnerCallbacks.OnInput(NetworkRunner runner, NetworkInput input)
+    {
+        var data = new NetworkInputData();
+
+        if (Input.GetKey(KeyCode.W)) data.Direction += Vector3.forward;
+        if (Input.GetKey(KeyCode.S)) data.Direction += Vector3.back;
+        if (Input.GetKey(KeyCode.A)) data.Direction += Vector3.left;
+        if (Input.GetKey(KeyCode.D)) data.Direction += Vector3.right;
+
+        data.Jump = _jumpPressed;
+        data.PassBomb = _passPressed;
+
+        // Resetear después de enviar
+        _jumpPressed = false;
+        _passPressed = false;
+
+        input.Set(data);
+    }
+
     void INetworkRunnerCallbacks.OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         if (runner.IsServer)
@@ -74,11 +84,6 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         _runner.ProvideInput = true;
 
         var scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);
-        var sceneInfo = new NetworkSceneInfo();
-        if (scene.IsValid)
-        {
-            sceneInfo.AddSceneRef(scene, LoadSceneMode.Additive);
-        }
 
         await _runner.StartGame(new StartGameArgs()
         {
@@ -93,15 +98,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     {
         if (_runner == null)
         {
-            if (GUI.Button(new Rect(0, 0, 200, 40), "Host"))
-            {
-                StartGame(GameMode.Host);
-            }
-
-            if (GUI.Button(new Rect(0, 40, 200, 40), "Join"))
-            {
-                StartGame(GameMode.Client);
-            }
+            if (GUI.Button(new Rect(0, 0, 200, 40), "Host")) StartGame(GameMode.Host);
+            if (GUI.Button(new Rect(0, 40, 200, 40), "Join")) StartGame(GameMode.Client);
         }
     }
 }
