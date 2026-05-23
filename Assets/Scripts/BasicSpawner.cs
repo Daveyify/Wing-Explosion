@@ -10,32 +10,29 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
-    // Guardamos si el jugador presionó jump/passBomb en este frame
     private bool _jumpPressed;
     private bool _passPressed;
 
+    private NetworkRunner _runner;
+
     private void Update()
     {
-        // Capturar inputs de un solo frame aquí, antes de que OnInput los consuma
-        if (Input.GetButtonDown("Jump")) _jumpPressed = true;
-        if (Input.GetKeyDown(KeyCode.F)) _passPressed = true;
     }
 
-    void INetworkRunnerCallbacks.OnInput(NetworkRunner runner, NetworkInput input)
+    public void OnInput(NetworkRunner runner, NetworkInput input)
     {
         var data = new NetworkInputData();
 
-        if (Input.GetKey(KeyCode.W)) data.Direction += Vector3.forward;
-        if (Input.GetKey(KeyCode.S)) data.Direction += Vector3.back;
-        if (Input.GetKey(KeyCode.A)) data.Direction += Vector3.left;
-        if (Input.GetKey(KeyCode.D)) data.Direction += Vector3.right;
+        data.Direction = new Vector3(
+            Input.GetAxisRaw("Horizontal"),
+            0f,
+            Input.GetAxisRaw("Vertical")
+        );
 
-        data.Jump = _jumpPressed;
-        data.PassBomb = _passPressed;
+        data.MouseX = Input.GetAxisRaw("Mouse X");  // <-- agrega esto
 
-        // Resetear después de enviar
-        _jumpPressed = false;
-        _passPressed = false;
+        if (Input.GetKey(KeyCode.Space))
+            data.Buttons.Set(NetworkInputData.JUMP_BUTTON, true);
 
         input.Set(data);
     }
@@ -44,8 +41,10 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     {
         if (runner.IsServer)
         {
-            Vector3 spawnPosition = new Vector3(-8, 2, 10);
-            NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
+            Vector3 spawnPosition = new Vector3(-8, 4, 10);
+            NetworkObject networkPlayerObject = runner.Spawn(
+                _playerPrefab, spawnPosition, Quaternion.identity, player // <-- inputAuthority = player
+            );
             _spawnedCharacters.Add(player, networkPlayerObject);
         }
     }
@@ -76,7 +75,6 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     void INetworkRunnerCallbacks.OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) { }
     void INetworkRunnerCallbacks.OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) { }
 
-    private NetworkRunner _runner;
 
     async void StartGame(GameMode mode)
     {
