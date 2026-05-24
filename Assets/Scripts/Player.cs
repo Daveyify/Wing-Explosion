@@ -12,6 +12,8 @@ public class Player : NetworkBehaviour
 
     [Networked] private Vector3 Velocity { get; set; }
 
+    public Vector3 CurrentVelocity => Velocity;
+
     [Networked] private float Yaw { get; set; }
 
     private void Awake()
@@ -25,21 +27,26 @@ public class Player : NetworkBehaviour
     {
         if (GetInput(out NetworkInputData data))
         {
-            // Rotación horizontal sincronizada con la red
-            Yaw += data.MouseX * 2f;
-            transform.rotation = Quaternion.Euler(0f, Yaw, 0f);
-
             Vector3 direction = data.Direction.normalized;
             Vector3 move = transform.right * direction.x + transform.forward * direction.z;
             move *= moveSpeed;
 
             float verticalVelocity = Velocity.y + gravity * Runner.DeltaTime;
 
+            if (_cc.isGrounded && verticalVelocity < 0f)
+                verticalVelocity = -2f;
+
             if (data.Buttons.IsSet(NetworkInputData.JUMP_BUTTON) && _cc.isGrounded)
                 verticalVelocity = jumpImpulse;
 
             Velocity = new Vector3(move.x, verticalVelocity, move.z);
             _cc.Move(Velocity * Runner.DeltaTime);
+
+            Yaw += data.MouseX * 2f;
+            transform.rotation = Quaternion.Euler(0f, Yaw, 0f);
+
+            if (direction.sqrMagnitude > 0)
+                _forward = direction;
         }
     }
 }

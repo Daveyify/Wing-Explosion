@@ -12,10 +12,8 @@ public class CameraFollow : NetworkBehaviour
     public override void Spawned()
     {
         _playerBody = transform.parent;
-        Debug.Log("PlayerBody: " + _playerBody?.name); // debe imprimir el nombre del Player
-                                                       // ...
+        Debug.Log("PlayerBody: " + _playerBody?.name);
 
-        // Solo activar la cámara del jugador local
         if (HasInputAuthority)
         {
             GetComponent<Camera>().enabled = true;
@@ -36,7 +34,6 @@ public class CameraFollow : NetworkBehaviour
 
         float mouseY = Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
 
-        // Solo vertical, el horizontal lo maneja Player.cs
         _rotationX -= mouseY;
         _rotationX = Mathf.Clamp(_rotationX, -maxLookAngle, maxLookAngle);
         transform.localRotation = Quaternion.Euler(_rotationX, 0f, 0f);

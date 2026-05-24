@@ -10,13 +10,14 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
-    private bool _jumpPressed;
-    private bool _passPressed;
+    private bool _pendingPass = false;
 
     private NetworkRunner _runner;
 
     private void Update()
     {
+        if (Input.GetMouseButtonDown(0))
+            _pendingPass = true;
     }
 
     public void OnInput(NetworkRunner runner, NetworkInput input)
@@ -29,10 +30,16 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             Input.GetAxisRaw("Vertical")
         );
 
-        data.MouseX = Input.GetAxisRaw("Mouse X");  // <-- agrega esto
+        data.MouseX = Input.GetAxisRaw("Mouse X");
 
         if (Input.GetKey(KeyCode.Space))
             data.Buttons.Set(NetworkInputData.JUMP_BUTTON, true);
+
+        if (_pendingPass)
+        {
+            data.Buttons.Set(NetworkInputData.PASS_BUTTON, true);
+            _pendingPass = false;
+        }
 
         input.Set(data);
     }
@@ -43,7 +50,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         {
             Vector3 spawnPosition = new Vector3(-8, 4, 10);
             NetworkObject networkPlayerObject = runner.Spawn(
-                _playerPrefab, spawnPosition, Quaternion.identity, player // <-- inputAuthority = player
+                _playerPrefab, spawnPosition, Quaternion.identity, player
             );
             _spawnedCharacters.Add(player, networkPlayerObject);
         }
