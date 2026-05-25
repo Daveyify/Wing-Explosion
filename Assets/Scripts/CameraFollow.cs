@@ -1,5 +1,6 @@
 using Fusion;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class CameraFollow : NetworkBehaviour
 {
@@ -12,7 +13,6 @@ public class CameraFollow : NetworkBehaviour
     public override void Spawned()
     {
         _playerBody = transform.parent;
-        Debug.Log("PlayerBody: " + _playerBody?.name);
 
         if (HasInputAuthority)
         {
@@ -30,14 +30,16 @@ public class CameraFollow : NetworkBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Escape))
+
+
         if (!HasInputAuthority) return;
+        if (EventSystem.current.IsPointerOverGameObject()) return;
 
         float mouseY = Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
-
         _rotationX -= mouseY;
         _rotationX = Mathf.Clamp(_rotationX, -maxLookAngle, maxLookAngle);
         transform.localRotation = Quaternion.Euler(_rotationX, 0f, 0f);
     }
-
 
 }

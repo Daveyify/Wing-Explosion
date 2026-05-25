@@ -1,0 +1,47 @@
+using UnityEngine;
+using UnityEngine.Video;
+using UnityEngine.SceneManagement;
+using System.Collections;
+
+public class IntroVideo : MonoBehaviour
+{
+    public VideoPlayer videoPlayer;
+    public CanvasGroup fadePanel;
+    public CanvasGroup videoPanel;
+    public float fadeDuration = 2f;
+    public string nextScene = "";
+
+    void Start()
+    {
+        if (fadePanel != null) fadePanel.alpha = 0;
+        if (videoPanel != null) videoPanel.alpha = 1;
+        videoPlayer.Play();
+        StartCoroutine(HandleIntro());
+    }
+
+    IEnumerator HandleIntro()
+    {
+        yield return new WaitUntil(() => videoPlayer.isPlaying);
+
+        // Espera a que el video termine completamente
+        yield return new WaitUntil(() => !videoPlayer.isPlaying);
+
+        // Fade out
+        float t = 0;
+        while (t < fadeDuration)
+        {
+            t += Time.deltaTime;
+            if (fadePanel != null) fadePanel.alpha = t / fadeDuration;
+            if (videoPanel != null) videoPanel.alpha = 1 - (t / fadeDuration);
+            yield return null;
+        }
+
+        if (!string.IsNullOrEmpty(nextScene))
+            SceneManager.LoadScene(nextScene);
+        else
+        {
+            if (videoPanel != null) videoPanel.gameObject.SetActive(false);
+            if (fadePanel != null) fadePanel.gameObject.SetActive(false);
+        }
+    }
+}
