@@ -6,7 +6,8 @@ public class LobbyUI : NetworkBehaviour
 {
     [SerializeField] private GameObject lobbyPanel;
     [SerializeField] private TextMeshProUGUI playersText;
-    [SerializeField] private TextMeshProUGUI waitingText;
+    [SerializeField] private GameObject hostImage;
+    [SerializeField] private GameObject clientImage;
 
     private void Update()
     {
@@ -23,13 +24,12 @@ public class LobbyUI : NetworkBehaviour
 
         if (Runner.IsServer)
         {
-            waitingText.text = "Presiona [ENTER] para iniciar";
+            hostImage.SetActive(true);
+            clientImage.SetActive(false);
 
             if (Input.GetKeyDown(KeyCode.Return))
             {
-                if (count < 2)
-                    waitingText.text = "¡Necesitas al menos 2 jugadores!";
-                else
+                if (count >= 2)
                 {
                     BombManager.Instance.StartGame();
                     lobbyPanel.SetActive(false);
@@ -38,7 +38,8 @@ public class LobbyUI : NetworkBehaviour
         }
         else
         {
-            waitingText.text = "Esperando que el host inicie...";
+            hostImage.SetActive(false);
+            clientImage.SetActive(true);
         }
     }
 }

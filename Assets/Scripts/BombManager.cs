@@ -1,7 +1,9 @@
 using Fusion;
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 using System.Linq;
+using TMPro;
 
 public class BombManager : NetworkBehaviour
 {
@@ -15,19 +17,25 @@ public class BombManager : NetworkBehaviour
     public NetworkLinkedList<PlayerRef> AlivePlayers { get; }
 
     public static BombManager Instance { get; private set; }
+    public TextMeshProUGUI textoTimer;
 
     [Networked] public NetworkBool IsHost { get; private set; }
 
-public override void Spawned()
-{
-    Instance = this;
-
-    if (HasStateAuthority)
+    public override void Spawned()
     {
-        GameActive = false;
-        IsHost = true;
+        Instance = this;
+        if (HasStateAuthority)
+        {
+            GameActive = false;
+            IsHost = true;
+        }
     }
-}
+
+    public override void Render()
+    {
+        if (textoTimer != null && GameActive)
+            textoTimer.text = $"{TimeLeft:F1}s";
+    }
 
     private void OnAlivePlayersChanged()
     {
@@ -38,7 +46,6 @@ public override void Spawned()
     public void StartGame()
     {
         if (!HasStateAuthority) return;
-
         TimeLeft = bombTimer;
         GameActive = true;
 
@@ -64,7 +71,6 @@ public override void Spawned()
         if (!HasStateAuthority) return;
         if (BombHolder != from) return;
         if (!AlivePlayers.Contains(to)) return;
-
         BombHolder = to;
         Debug.Log($"Bomba pasada de {from} a {to}");
     }
@@ -72,27 +78,53 @@ public override void Spawned()
     public override void FixedUpdateNetwork()
     {
         if (!HasStateAuthority || !GameActive) return;
-
         TimeLeft -= Runner.DeltaTime;
-
         if (TimeLeft <= 0f)
             ExplodeCurrentHolder();
     }
 
     private void ExplodeCurrentHolder()
     {
-        Debug.Log($"¡Boom! Jugador {BombHolder} eliminado");
-        AlivePlayers.Remove(BombHolder);
+        PlayerRef eliminated = BombHolder;
+        Debug.Log($"Boom! Jugador {eliminated} eliminado");
+
+        AlivePlayers.Remove(eliminated);
 
         if (AlivePlayers.Count <= 1)
         {
             GameActive = false;
-            Debug.Log($"¡Ganó el jugador {AlivePlayers[0]}!");
+            BombHolder = PlayerRef.None;
+
+            if (AlivePlayers.Count == 1)
+            {
+                Debug.Log($"GanÃ³ el jugador {AlivePlayers[0]}!");
+                RPC_LoadSceneForPlayer(eliminated, 2);   
+                RPC_LoadSceneForPlayer(AlivePlayers[0], 3);  
+            }
+            else
+            {
+                RPC_LoadScene(2); 
+            }
             return;
         }
 
         TimeLeft = bombTimer;
-        var remaining = AlivePlayers.ToList();
+        var remaining = new List<PlayerRef>();
+        foreach (var p in AlivePlayers)
+            remaining.Add(p);
         BombHolder = remaining[Random.Range(0, remaining.Count)];
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_LoadScene(int sceneIndex)
+    {
+        SceneManager.LoadScene(sceneIndex);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_LoadSceneForPlayer(PlayerRef target, int sceneIndex)
+    {
+        if (Runner.LocalPlayer == target)
+            SceneManager.LoadScene(sceneIndex);
     }
 }

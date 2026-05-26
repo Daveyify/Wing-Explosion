@@ -14,17 +14,16 @@ public class TutorialPanels : MonoBehaviour
 
     void Update()
     {
-        // Cambiar de panel con la tecla L
-        if (Input.GetKeyDown(KeyCode.L))
-        {
+        if (Input.GetKeyDown(KeyCode.RightArrow))
             NextPanel();
-        }
+
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
+            PreviousPanel();
     }
 
     public void NextPanel()
     {
         panels[currentPanel].SetActive(false);
-
         currentPanel++;
 
         if (currentPanel >= panels.Length)
@@ -33,6 +32,15 @@ public class TutorialPanels : MonoBehaviour
             return;
         }
 
+        ShowPanel(currentPanel);
+    }
+
+    public void PreviousPanel()
+    {
+        if (currentPanel <= 0) return;
+
+        panels[currentPanel].SetActive(false);
+        currentPanel--;
         ShowPanel(currentPanel);
     }
 

@@ -5,6 +5,7 @@ using Fusion.Sockets;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
@@ -18,6 +19,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     void Start()
     {
         IsReady = false;
+
         string mode = PlayerPrefs.GetString("GameMode", "");
         if (mode == "Host")
             StartGame(GameMode.Host);
@@ -27,15 +29,34 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
     private void Update()
     {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         if (Input.GetMouseButtonDown(0))
         {
-            if (!EventSystem.current.IsPointerOverGameObject())
+            if (!IsPointerOverUI())
                 _pendingPass = true;
         }
     }
 
+    private bool IsPointerOverUI()
+    {
+        if (EventSystem.current == null) return false;
+
+        PointerEventData pointerData = new PointerEventData(EventSystem.current)
+        {
+            position = Input.mousePosition
+        };
+
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
+
+        return results.Count > 0;
+    }
+
     public void OnInput(NetworkRunner runner, NetworkInput input)
     {
+        if (GameState.IsPaused) return;
         var data = new NetworkInputData();
         data.Direction = new Vector3(
             Input.GetAxisRaw("Horizontal"),
@@ -81,7 +102,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         _runner = gameObject.AddComponent<NetworkRunner>();
         _runner.ProvideInput = true;
 
-        var scene = SceneRef.FromIndex(0);
+        var scene = SceneRef.FromIndex(1);
 
         await _runner.StartGame(new StartGameArgs()
         {

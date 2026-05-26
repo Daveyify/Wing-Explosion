@@ -3102,7 +3102,7 @@ MonoBehaviour:
   videoPlayer: {fileID: 1809503276}
   fadePanel: {fileID: 975517161}
   videoPanel: {fileID: 1809503280}
-  fadeDuration: 2
+  fadeDuration: 1
   nextScene: 
 --- !u!225 &1809503280
 CanvasGroup:

@@ -37,39 +37,6 @@ public class OptionsManager : MonoBehaviour
         PlayerPrefs.SetFloat("Sound", value);
     }
 
-    public void GoHome()
-    {
-        Time.timeScale = 1f;
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-        optionsPanel.SetActive(false);
-        SceneManager.LoadScene("MainMenu");
-    }
-    public void PauseGame()
-    {
-        Time.timeScale = 0f;
-        Time.timeScale = 0f;
-        pauseButton.SetActive(false);
-        playButton.SetActive(true);
-    }
-
-    public void ResumeGame()
-    {
-        Time.timeScale = 1f;
-        pauseButton.SetActive(true);
-        playButton.SetActive(false);
-    }
-
-    public void QuitGame()
-    {
-        Time.timeScale = 1f;
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
-    }
-
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -77,17 +44,47 @@ public class OptionsManager : MonoBehaviour
             if (optionsPanel.activeSelf)
             {
                 optionsPanel.SetActive(false);
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-                Time.timeScale = 1f;
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
             }
             else
             {
                 optionsPanel.SetActive(true);
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
-                Time.timeScale = 0f;
             }
         }
+    }
+
+    public void PauseGame()
+    {
+        GameState.IsPaused = true;
+        Time.timeScale = 0f;
+        pauseButton.SetActive(false);
+        playButton.SetActive(true);
+    }
+
+    public void ResumeGame()
+    {
+        GameState.IsPaused = false;
+        Time.timeScale = 1f;
+        pauseButton.SetActive(true);
+        playButton.SetActive(false);
+    }
+    public void GoHome()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        optionsPanel.SetActive(false);
+        SceneManager.LoadScene("MainMenu");
+    }
+
+    public void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 }

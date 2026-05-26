@@ -19,12 +19,9 @@ public class GameReadyGate : MonoBehaviour
         yield return new WaitUntil(() => BasicSpawner.IsReady);
 
         _loadingCanvas.SetActive(false);
-
         _instructionsPanel.SetActive(true);
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-
-        Time.timeScale = 0f;
     }
 }
